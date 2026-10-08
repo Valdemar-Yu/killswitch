@@ -1,0 +1,41 @@
+#!/bin/sh
+# killswitch-managed-command
+set -eu
+ROOT='/Library/Application Support/killswitch'
+name=$(/usr/bin/basename "$0")
+case "$name" in
+  clash-enable) action=enable ;;
+  clash-rollback) action=rollback ;;
+  clash-status) action=status ;;
+  *)
+    action=help
+    if [ "$#" -gt 0 ]; then action=$1; shift; fi
+    ;;
+esac
+case "$action" in
+  help|--help|-h)
+    printf '%s\n' 'Usage: killswitch enable [installation options] | rollback | status' \
+      'Aliases: clash-enable, clash-rollback, clash-status' \
+      'Commands request sudo automatically when needed.'
+    exit 0
+    ;;
+  enable|rollback|status) ;;
+  *) printf 'Unknown action: %s\n' "$action" >&2; exit 2 ;;
+esac
+if [ "$#" -gt 0 ] && [ "$1" = --help ]; then
+  printf '%s\n' 'Usage: killswitch enable [--uid UID --core-uid UID --core-path PATH --api-socket PATH]' \
+    '       killswitch rollback' '       killswitch status'
+  exit 0
+fi
+if [ ! -f "$ROOT/install.sh" ]; then
+  printf '%s\n' 'Not installed. Run sudo /bin/sh install.sh from the downloaded repository first.' >&2
+  exit 1
+fi
+if [ "$(/usr/bin/id -u)" -ne 0 ]; then
+  exec /usr/bin/sudo /usr/local/bin/killswitch "$action" "$@"
+fi
+case "$action" in
+  enable) exec /bin/sh "$ROOT/install.sh" "$@" ;;
+  rollback) exec /bin/sh "$ROOT/rollback.sh" "$@" ;;
+  status) exec /bin/sh "$ROOT/status.sh" "$@" ;;
+esac
