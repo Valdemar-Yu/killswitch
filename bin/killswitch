@@ -27,12 +27,12 @@ if [ "$#" -gt 0 ] && [ "$1" = --help ]; then
     '       killswitch rollback' '       killswitch status'
   exit 0
 fi
+if [ "$(/usr/bin/id -u)" -ne 0 ]; then
+  exec /usr/bin/sudo /usr/local/bin/killswitch "$action" "$@"
+fi
 if [ ! -f "$ROOT/install.sh" ]; then
   printf '%s\n' 'Not installed. Run sudo /bin/sh install.sh from the downloaded repository first.' >&2
   exit 1
-fi
-if [ "$(/usr/bin/id -u)" -ne 0 ]; then
-  exec /usr/bin/sudo /usr/local/bin/killswitch "$action" "$@"
 fi
 case "$action" in
   enable) exec /bin/sh "$ROOT/install.sh" "$@" ;;
